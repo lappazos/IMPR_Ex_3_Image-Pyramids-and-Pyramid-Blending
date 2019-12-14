@@ -4,6 +4,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from skimage.color import rgb2gray
 from imageio import imread
+import os
 
 MIN_RESOLUTION = 16
 
@@ -18,6 +19,10 @@ FILE_PROBLEM = "File Problem"
 GREYSCALE = 1
 
 MAX_INTENSITY = 255
+
+
+def realpath(filename):
+    return os.path.join(os.path.dirname(__file__), filename)
 
 
 def representation_check(representation):
@@ -80,7 +85,7 @@ def expand(im, filter):
 
 def create_filter(size):
     base_filter = np.array([1, 1])
-    filter = None
+    filter = np.array([1, 1])
     for i in range(size - 2):
         filter = signal.convolve(filter, base_filter)
     return filter / np.sum(filter)
@@ -113,11 +118,14 @@ def stretch(im):
 
 
 def laplacian_to_image(lpyr, filter_vec, coeff):
-    pass
+    lpyr *= coeff
+    for i in range(1, len(lpyr)):
+        lpyr[-i - 1] += expand(lpyr[-i], filter_vec)
+    return lpyr[0]
 
 
 def render_pyramid(pyr, levels):
-    res = np.zeros(pyr[0].shape[0], pyr[0].shape[1] * 2)
+    res = np.zeros((pyr[0].shape[0], int(pyr[0].shape[1] * (2 - 0.5 ** (levels - 1)))))
     last_col = 0
     for i in range(levels):
         m, n = pyr[i].shape
@@ -128,4 +136,31 @@ def render_pyramid(pyr, levels):
 
 def display_pyramid(pyr, levels):
     res = render_pyramid(pyr, levels)
-    plt.imshow(res)
+    plt.imshow(res, cmap='gray')
+    plt.show()
+
+
+def pyramid_blending(im1, im2, mask, max_levels, filter_size_im, filter_size_mask):
+    L_1, filter_vec_im = build_laplacian_pyramid(im1, max_levels, filter_size_im)
+    L_2, _ = build_laplacian_pyramid(im2, max_levels, filter_size_im)
+    G_m, filter_vec_mask = build_gaussian_pyramid(mask.astype(np.float64), max_levels, filter_size_mask)
+    L_out = []
+    for i in range(len(L_1)):
+        L_out[i] = G_m[i] * L_1[i] + (1 - G_m[i]) * L_2[i]
+    coeff = [1] * len(L_out)
+    return laplacian_to_image(L_out, filter_vec, coeff).clip(min=0, max=1)
+
+
+def blending_example(im1, im2, mask, ):
+    im1 = read_image(realpath(im1), 2)
+    im2 = read_image(realpath(im2), 2)
+    mask = read_image(realpath(mask), 1).astype(np.bool)
+    blended = np.empty(im1.shape+(3,))
+    for i in range(blended.shape[2]):
+        blended[:,:,i] = pyramid_blending(im1,im2,mask,,,)
+
+
+
+if __name__ == '__main__':
+    pyr = build_laplacian_pyramid(read_image('monkey.jpg', 1), 5, 3)[0]
+    display_pyramid(pyr, 4)
