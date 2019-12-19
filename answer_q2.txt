@@ -1,0 +1,3 @@
+as the filter size is increasing, we convolve a larger amount of pixels in every layer of the pyramid. that gives an
+effect of uncreased blur to the image, but also increase the blending effect in the transition lines, as each image
+absorb more details from the other thanks to the bigger filter

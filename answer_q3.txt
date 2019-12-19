@@ -1,0 +1,2 @@
+as the levels increase, we get a smoother transition between the photos - higher frequencies are blended as we move on
+with levels, specifying the blend details.
