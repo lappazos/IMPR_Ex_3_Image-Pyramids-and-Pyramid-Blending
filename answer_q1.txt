@@ -1,0 +1,3 @@
+By multiply each level in different value, we try to achieve a band pass filter effect - each level at the pyramid
+represent a different set of frequencies, delicate changes at the image, and we can give more or less weight to each
+of these levels with these coefficients.
